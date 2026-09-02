@@ -1,0 +1,76 @@
+[project]
+name = "avogadro-webmo"
+version = "0.1.0"
+description = "Browse and import WebMO jobs from Avogadro over the REST/JSON interface"
+authors = [{ name = "Geoff Hutchison", email = "geoff.hutchison@gmail.com" }]
+license = "BSD-3-Clause"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+# Avogadro runs a feature of this plugin as:
+#     pixi run avogadro-webmo <identifier> [--user-options] [--lang <locale>]
+[project.scripts]
+avogadro-webmo = "avogadro_webmo:main"
+
+[build-system]
+build-backend = "uv_build"
+requires = ["uv_build>=0.10.2,<0.11.0"]
+
+# --- Pixi ------------------------------------------------------------------
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+
+[tool.pixi.dependencies]
+python = ">=3.11"
+requests = ">=2.32"
+keyring = ">=25"
+platformdirs = ">=4"
+
+[tool.pixi.pypi-dependencies]
+avogadro_webmo = { path = ".", editable = true }
+
+[tool.pixi.tasks]
+# Exercise the plugin the way Avogadro does, without launching Avogadro.
+demo-login = "python -m avogadro_webmo.harness login"
+demo-options = "python -m avogadro_webmo.harness options"
+demo-open = "python -m avogadro_webmo.harness open"
+
+[tool.pixi.feature.test.dependencies]
+pytest = "*"
+
+[tool.pixi.feature.test.tasks]
+test = "pytest -q"
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+
+# --- Avogadro --------------------------------------------------------------
+
+[tool.avogadro]
+# The "table" user-option type only works from the release carrying the
+# jsonwidget/command fixes on the avogadrolibs fix-json-table branch.
+minimum-avogadro-version = "2.0"
+# set this to 2.1 when it's released
+# for now, we'll test with development builds
+
+[[tool.avogadro.menu-commands]]
+identifier = "settings"
+input-format = "cjson"
+user-options = "dynamic"
+menu = "Extensions"
+submenu = "WebMO"
+item = "Server Settings…"
+menu-priorities = [ 100, 900 ]
+
+[[tool.avogadro.menu-commands]]
+identifier = "open"
+input-format = "cjson"
+user-options = "dynamic"
+menu = "Extensions"
+submenu = "WebMO"
+item = "Open Job…"
+menu-priorities = [ 100, 800 ]
