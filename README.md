@@ -11,7 +11,10 @@ it will not work against Avogadro 2.0.
 
 * **Extensions › WebMO › Server Settings…** — point at a server, sign in, and
   keep the session token. The URL may be the login page, the `cgi-bin/webmo`
-  directory, a bare host, or the `rest.cgi` endpoint itself.
+  directory, a bare host, or the `rest.cgi` endpoint itself. A plain static
+  form: Avogadro remembers what was typed and restores it next time, and
+  deliberately never remembers a password field, so the server and user name
+  come back but the password does not.
 * **Extensions › WebMO › Open Job…** — a sortable table of recent jobs; pick
   one and it is loaded as a molecule.
 

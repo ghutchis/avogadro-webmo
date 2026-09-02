@@ -58,7 +58,11 @@ def _dispatch(args):
             return {"error": f"Unknown feature: {args.feature}"}
 
         if args.user_options:
-            return handler.user_options(avo_input)
+            # Features whose form is a static JSON file are never asked.
+            builder = getattr(handler, "user_options", None)
+            if builder is None:
+                return {"error": f"{args.feature} has a static option file"}
+            return builder(avo_input)
         return handler.run(avo_input)
     except Exception as error:
         logger.exception("avogadro-webmo %s failed", args.feature)

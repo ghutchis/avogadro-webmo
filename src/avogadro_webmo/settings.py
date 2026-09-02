@@ -1,16 +1,16 @@
 #  This source file is part of the Avogadro project
 #  This source code is released under the BSD-3-Clause License, (see "LICENSE").
 
-"""The "settings" feature: point at a server, sign in, remember the token."""
+"""The "settings" feature: point at a server, sign in, remember the token.
+
+The form itself is a static JSON file, customization/settings_options.json.
+It can be, because Avogadro persists what the user typed into a command dialog
+and restores it next time -- and deliberately never persists a password field,
+so the one value that must not be remembered is not.
+"""
 
 from . import cache, config
 from .client import WebMOClient, WebMOError, normalize_url
-
-
-def user_options(_avo_input=None):
-    """Built fresh each time so the form shows the current configuration."""
-    cfg = config.load_config()
-    return {"userOptions": _form(cfg, _describe(cfg))}
 
 
 def run(avo_input):
@@ -90,50 +90,3 @@ def _describe(cfg):
     state = "signed in" if signed_in else "no current session"
     version = cfg.get("server_version") or "unknown version"
     return f"{cfg['username']} @ {cfg['url']}\nWebMO {version}, {state}."
-
-
-def _form(cfg, status):
-    return {
-        "Server URL": {
-            "type": "string",
-            "order": 1,
-            "default": cfg.get("url", ""),
-            "placeholderText": "https://host/cgi-bin/webmo/rest.cgi",
-            "toolTip": "The login page or the cgi-bin directory work too.",
-        },
-        "Username": {
-            "type": "string",
-            "order": 2,
-            "default": cfg.get("username", ""),
-        },
-        "Password": {
-            "type": "string",
-            "order": 3,
-            "password": True,
-            "toolTip": "Stored in the system keychain, never in a plain file.",
-        },
-        "Session length (hours)": {
-            "type": "integer",
-            "order": 4,
-            "default": int(cfg.get("session_hours", 24)),
-            "minimum": 1,
-            "maximum": 168,
-        },
-        "Jobs to list": {
-            "type": "integer",
-            "order": 5,
-            "default": int(cfg.get("job_count", 25)),
-            "minimum": 5,
-            "maximum": 100,
-            "toolTip": (
-                "WebMO returns job numbers only, so each job costs one more "
-                "request. Listing more means a longer wait."
-            ),
-        },
-        "Only completed jobs": {
-            "type": "boolean",
-            "order": 6,
-            "default": bool(cfg.get("only_completed", True)),
-        },
-        "Status": {"type": "text", "order": 7, "default": status},
-    }
