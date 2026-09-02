@@ -63,8 +63,11 @@ def run(avo_input):
         return {"message": f"Could not read a job number from {selected!r}."}
 
     try:
-        client = connect()
-        metadata = client.job(number)
+        cfg = config.load_config()
+        client = connect(cfg)
+        # The picker listed this job moments ago, so a finished one is already
+        # on disk; only a job still running has to be asked about again.
+        metadata = cache.JobCache.load(cfg).get(number) or client.job(number)
         status = str(metadata.get("jobStatus", "")).lower()
         if status and status != "complete":
             return {

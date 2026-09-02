@@ -67,7 +67,7 @@ class WebMOClient:
 
     # -- transport ----------------------------------------------------------
 
-    def _request(self, method, path, *, auth=True, params=None, data=None):
+    def _json(self, method, path, *, auth=True, params=None, data=None):
         params = dict(params or {})
         if auth:
             if not self.token:
@@ -90,10 +90,7 @@ class WebMOClient:
         if not response.ok:
             detail = _server_error(response) or f"HTTP {response.status_code}"
             raise WebMOError(f"{method} {path} failed: {detail}")
-        return response
 
-    def _json(self, method, path, **kwargs):
-        response = self._request(method, path, **kwargs)
         try:
             payload = response.json()
         except ValueError as error:
@@ -112,6 +109,9 @@ class WebMOClient:
         return self._json("GET", "/status", auth=False)
 
     def login(self, password, hours=24):
+        """There is deliberately no logout: the token is meant to outlive the
+        process, and a destructor firing DELETE /sessions is exactly the
+        misfeature that rules out the `webmo` package."""
         payload = self._json(
             "POST",
             "/sessions",
@@ -125,11 +125,6 @@ class WebMOClient:
         self.token = payload["token"]
         return self.token
 
-    def logout(self):
-        """Explicit only. Nothing here ends the session from a destructor."""
-        if self.token:
-            self._json("DELETE", "/sessions")
-            self.token = None
 
     # -- jobs ---------------------------------------------------------------
 
@@ -146,18 +141,6 @@ class WebMOClient:
         """QC_JSON, which Avogadro's qcschema reader parses directly."""
         return self._json("GET", f"/jobs/{number}/results")
 
-    def geometry(self, number):
-        return self._json("GET", f"/jobs/{number}/geometry")["xyz"]
-
-    def raw_output(self, number):
-        return self._request("GET", f"/jobs/{number}/raw_output").content
-
-    def engines(self):
-        return self._json("GET", "/engines")["engines"]
-
-    def folders(self):
-        """A dict of name -> id, e.g. {"inbox": 0, "trash": -1}."""
-        return self._json("GET", "/folders")["folders"]
 
 
 def _server_error(response):

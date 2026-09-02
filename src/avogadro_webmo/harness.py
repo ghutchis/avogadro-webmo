@@ -14,7 +14,6 @@ import json
 import sys
 
 from . import config, jobs, settings
-from .client import WebMOClient, normalize_url
 
 DEMO_URL = "https://www.webmo.net/demoserver/cgi-bin/webmo/login.cgi"
 
@@ -24,20 +23,22 @@ def _login(argv):
     username = argv[1] if len(argv) > 1 else "guest"
     password = argv[2] if len(argv) > 2 else "guest"
 
-    cfg = config.load_config()
-    cfg.update(url=normalize_url(url), username=username, session_hours=24)
-    client = WebMOClient(cfg["url"], username)
-    cfg["server_version"] = client.status().get("version", "")
-    client.login(password, 24)
-
-    config.save_config(cfg)
-    in_keychain = config.save_token(cfg, client.token, 24)
-    config.save_password(cfg, password)
-    print(
-        f"Signed in to WebMO {cfg['server_version']} as {username}\n"
-        f"  config : {config.config_path()}\n"
-        f"  token  : {'system keychain' if in_keychain else config.token_fallback_path()}"
+    # Through the real command handler, so this exercises the same validation
+    # and storage the dialog does rather than a second copy of it.
+    result = settings.run(
+        {
+            "options": {
+                "Server URL": url,
+                "Username": username,
+                "Password": password,
+                "Session length (hours)": 24,
+                "Jobs to list": 25,
+                "Only completed jobs": True,
+            }
+        }
     )
+    print(result.get("message") or json.dumps(result))
+    print(f"  config : {config.config_path()}")
 
 
 def _options(argv):

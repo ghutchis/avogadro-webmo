@@ -42,14 +42,26 @@ def token_fallback_path():
 # -- ordinary settings -------------------------------------------------------
 
 
+def read_json(path, default=None):
+    """Read a JSON file, treating anything unreadable as simply absent.
+
+    Config and cache files are conveniences; a truncated or hand-edited one is
+    never worth a failed dialog.
+    """
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return default
+    except (OSError, ValueError) as error:
+        logger.warning("Ignoring unreadable %s: %s", path, error)
+        return default
+
+
 def load_config():
     config = dict(DEFAULTS)
-    try:
-        config.update(json.loads(config_path().read_text(encoding="utf-8")))
-    except FileNotFoundError:
-        pass
-    except (OSError, ValueError) as error:
-        logger.warning("Ignoring unreadable %s: %s", config_path(), error)
+    stored = read_json(config_path())
+    if isinstance(stored, dict):
+        config.update(stored)
     return config
 
 
@@ -137,14 +149,11 @@ def load_token(config):
         except Exception as error:
             logger.warning("Could not read token from the keychain: %s", error)
 
-    if blob is None:
-        try:
-            blob = token_fallback_path().read_text(encoding="utf-8")
-        except (OSError, ValueError):
-            return None
+    stored = json.loads(blob) if blob else read_json(token_fallback_path())
+    if not isinstance(stored, dict):
+        return None
 
     try:
-        stored = json.loads(blob)
         expires = datetime.fromisoformat(stored["expires"])
     except (ValueError, KeyError, TypeError):
         return None
@@ -169,5 +178,7 @@ def forget(config):
             try:
                 keyring.delete_password(SERVICE, account)
             except Exception:
+                # Deleting an entry that was never stored raises, and that is
+                # the outcome we wanted anyway.
                 pass
     _clear_token_fallback()

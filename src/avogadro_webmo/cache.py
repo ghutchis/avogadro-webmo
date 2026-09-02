@@ -18,6 +18,8 @@ from pathlib import Path
 
 import platformdirs
 
+from .config import read_json
+
 logger = logging.getLogger(__name__)
 
 # A job in one of these states is finished for good and safe to keep. Anything
@@ -54,17 +56,8 @@ class JobCache:
     @classmethod
     def load(cls, cfg):
         path = cache_path(cfg)
-        try:
-            entries = json.loads(path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            entries = {}
-        except (OSError, ValueError) as error:
-            # A truncated or hand-edited cache is not worth a failed dialog.
-            logger.warning("Discarding unreadable cache %s: %s", path, error)
-            entries = {}
-        if not isinstance(entries, dict):
-            entries = {}
-        return cls(path, entries)
+        entries = read_json(path)
+        return cls(path, entries if isinstance(entries, dict) else {})
 
     def get(self, number):
         metadata = self.entries.get(str(number))

@@ -31,7 +31,10 @@ RESULTS = {
     "symbols": ["N", "H", "H"],
     "geometry": [0, 0, 0.137281, 0, 0.873651, -0.480484, 0, -0.873651, -0.480484],
     "connectivity": [[1, 2, 1], [1, 3, 1]],
-    "properties": {"method_energy_name": "HF", "uhf_energy": {"units": "Hartree", "value": -55.2}},
+    "properties": {
+        "method_energy_name": "HF",
+        "uhf_energy": {"units": "Hartree", "value": -55.2},
+    },
 }
 
 
@@ -105,9 +108,10 @@ def test_the_selected_row_is_read_back_as_a_job_number(offline):
     assert result["moleculeFormat"] == "qcjson"
     document = json.loads(result["qcjson"])
     assert document["schema_name"] == "QC_JSON"
-    # Normalization happened on the way out.
-    assert document["properties"]["total_energy"]["value"] == -55.2
+    # Named on the way out; the energy is left for the reader to resolve.
     assert document["name"] == "H2N (1963207)"
+    assert "total_energy" not in document["properties"]
+    assert result["message"].endswith("-55.2 Hartree")
     # WebMO supplied connectivity, so Avogadro must not re-perceive bonds.
     assert "bond" not in result
 
@@ -146,3 +150,17 @@ def test_the_status_line_says_where_the_rows_came_from(offline):
     jobs.user_options({})
     status = jobs.user_options({})["userOptions"]["Status"]["default"]
     assert "1 from cache, 1 fetched." in status
+
+
+def test_opening_a_job_reuses_the_metadata_the_picker_cached(offline, monkeypatch):
+    jobs.user_options({})  # fills the cache
+
+    asked = []
+    original = offline.job
+    monkeypatch.setattr(
+        offline, "job", lambda number: (asked.append(number), original(number))[1]
+    )
+
+    row = jobs.DELIMITER.join(["1963207", "H2N", "", "", ""])
+    assert "qcjson" in jobs.run({"options": {"Job": row}})
+    assert asked == [], "a completed job was fetched again to open it"
