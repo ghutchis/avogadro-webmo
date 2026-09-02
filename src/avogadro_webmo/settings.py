@@ -3,7 +3,7 @@
 
 """The "settings" feature: point at a server, sign in, remember the token."""
 
-from . import config
+from . import cache, config
 from .client import WebMOClient, WebMOError, normalize_url
 
 
@@ -56,8 +56,10 @@ def run(avo_input):
         return {"message": "A password is required to sign in to WebMO."}
 
     if previous.get("url") != url or previous.get("username") != username:
-        # The stored secrets belong to the old account; they are useless now.
+        # The stored secrets belong to the old account; they are useless now,
+        # and so are that account's cached job listings.
         config.forget(previous)
+        cache.forget(previous)
 
     try:
         client.login(password, hours)

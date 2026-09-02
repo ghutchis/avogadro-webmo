@@ -52,9 +52,10 @@ class FakeClient:
 
 
 @pytest.fixture
-def offline(monkeypatch):
+def offline(monkeypatch, tmp_path):
     client = FakeClient()
     monkeypatch.setattr(jobs, "connect", lambda *args: client)
+    monkeypatch.setattr(jobs.cache, "cache_path", lambda cfg: tmp_path / "jobs.json")
     monkeypatch.setattr(
         jobs.config,
         "load_config",
@@ -120,3 +121,28 @@ def test_an_unfinished_job_is_reported_rather_than_imported(offline):
     result = jobs.run({"options": {"Job": row}})
     assert "running" in result["message"]
     assert "qcjson" not in result
+
+
+def test_a_second_listing_asks_the_server_for_nothing(offline, monkeypatch):
+    jobs.user_options({})
+
+    asked = []
+    original = offline.job
+
+    def watched(number):
+        asked.append(number)
+        return original(number)
+
+    monkeypatch.setattr(offline, "job", watched)
+    table = jobs.user_options({})["userOptions"]["Job"]
+
+    # 1963207 finished, so it is served from the cache; 1963200 is still
+    # running and has to be asked about again.
+    assert asked == [1963200]
+    assert len(table["rows"]) == 2
+
+
+def test_the_status_line_says_where_the_rows_came_from(offline):
+    jobs.user_options({})
+    status = jobs.user_options({})["userOptions"]["Status"]["default"]
+    assert "1 from cache, 1 fetched." in status

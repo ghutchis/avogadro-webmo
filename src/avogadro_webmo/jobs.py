@@ -7,7 +7,7 @@ import json
 import logging
 import time
 
-from . import config, qcjson
+from . import cache, config, qcjson
 from .client import WebMOError
 from .session import connect
 
@@ -116,20 +116,31 @@ def _list_jobs():
     wanted = int(cfg.get("job_count", 25))
     numbers = numbers[:wanted]
 
+    memo = cache.JobCache.load(cfg)
     rows = []
     deadline = time.monotonic() + FETCH_BUDGET_SECONDS
     truncated = False
     for number in numbers:
-        if time.monotonic() > deadline:
-            truncated = True
-            break
-        try:
-            rows.append(_row(number, client.job(number)))
-        except WebMOError as error:
-            logger.warning("Skipping job %s: %s", number, error)
+        metadata = memo.get(number)
+        if metadata is None:
+            # Only a request has to beat the clock; cache hits are free, so a
+            # warm list never gets truncated.
+            if time.monotonic() > deadline:
+                truncated = True
+                break
+            try:
+                metadata = client.job(number)
+            except WebMOError as error:
+                logger.warning("Skipping job %s: %s", number, error)
+                continue
+            memo.put(number, metadata)
+        rows.append(_row(number, metadata))
+    memo.save()
 
     where = f"{cfg['username']} @ {cfg['url']}"
     status = f"{len(rows)} of {len(numbers)} recent jobs · {where}"
+    if memo.hits:
+        status += f"\n{memo.hits} from cache, {memo.misses} fetched."
     if truncated:
         status += (
             f"\nStopped after {FETCH_BUDGET_SECONDS:.0f}s. Lower “Jobs to "

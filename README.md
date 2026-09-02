@@ -53,5 +53,20 @@ pixi run -e test test               # unit tests, no network
 `/jobs` returns **job numbers only**, capped at 250, so each row of the table
 costs one more request at roughly 0.4 s. The server serializes them — a thread
 pool measured no faster than doing them one at a time — so the list is capped
-("Jobs to list", 25 by default) and abandoned after 20 s, comfortably inside
-the 30 s Avogadro allows a `--user-options` call.
+("Jobs to list", 25 by default) and network fetching is abandoned after 20 s,
+comfortably inside the 30 s Avogadro allows a `--user-options` call.
+
+A finished job never changes again, so its metadata is memoized under
+`<cache dir>/avogadro/webmo/`, one file per server and user. Jobs that are
+still running or queued are never cached, and the file is trimmed to the 2000
+highest job numbers. Measured against the demo server, listing 25 jobs:
+
+| | time |
+|---|---|
+| cold | 9.9 s |
+| 25 cached, 35 new (60 listed) | 13.6 s |
+| fully warm | 0.6 s |
+
+That matters because Avogadro asks a `user-options = "dynamic"` command to
+rebuild its options *every* time the menu item is opened. Only the fetches are
+subject to the 20 s budget, so a warm list is never truncated.
