@@ -1,40 +1,38 @@
 {
-  "userOptions": {
-    "Server URL": {
-      "type": "string",
-      "order": 1,
-      "placeholderText": "https://host/cgi-bin/webmo/rest.cgi",
-      "toolTip": "The login page or the cgi-bin directory work too."
-    },
-    "Username": {
-      "type": "string",
-      "order": 2
-    },
-    "Password": {
-      "type": "string",
-      "order": 3,
-      "password": true,
-      "toolTip": "Stored in the system keychain. Leave blank to keep the session you already have and just change the settings below."
-    },
-    "Session length (hours)": {
-      "type": "integer",
-      "order": 4,
-      "default": 24,
-      "minimum": 1,
-      "maximum": 168
-    },
-    "Jobs to list": {
-      "type": "integer",
-      "order": 5,
-      "default": 25,
-      "minimum": 5,
-      "maximum": 100,
-      "toolTip": "WebMO returns job numbers only, so each new job costs one more request. Finished jobs are cached, so only the first listing pays for them."
-    },
-    "Only completed jobs": {
-      "type": "boolean",
-      "order": 6,
-      "default": true
-    }
+  "Server URL": {
+    "type": "string",
+    "order": 1,
+    "placeholderText": "https://host/cgi-bin/webmo/rest.cgi",
+    "toolTip": "The login page or the cgi-bin directory work too."
+  },
+  "Username": {
+    "type": "string",
+    "order": 2
+  },
+  "Password": {
+    "type": "string",
+    "order": 3,
+    "password": true,
+    "toolTip": "Stored in the system keychain. Leave blank to keep the session you already have and just change the settings below."
+  },
+  "Session length (hours)": {
+    "type": "integer",
+    "order": 4,
+    "default": 24,
+    "minimum": 1,
+    "maximum": 168
+  },
+  "Jobs to list": {
+    "type": "integer",
+    "order": 5,
+    "default": 25,
+    "minimum": 5,
+    "maximum": 100,
+    "toolTip": "WebMO returns job numbers only, so each new job costs one more request. Finished jobs are cached, so only the first listing pays for them."
+  },
+  "Only completed jobs": {
+    "type": "boolean",
+    "order": 6,
+    "default": true
   }
 }

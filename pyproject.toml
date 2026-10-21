@@ -51,11 +51,7 @@ test = { features = ["test"], solve-group = "default" }
 # --- Avogadro --------------------------------------------------------------
 
 [tool.avogadro]
-# The "table" user-option type only works from the release carrying the
-# jsonwidget/command fixes on the avogadrolibs fix-json-table branch.
-minimum-avogadro-version = "2.0"
-# set this to 2.1 when it's released
-# for now, we'll test with development builds
+minimum-avogadro-version = "2.1"
 
 [[tool.avogadro.menu-commands]]
 identifier = "settings"
